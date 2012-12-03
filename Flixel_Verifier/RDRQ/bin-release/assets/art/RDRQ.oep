@@ -1,0 +1,24 @@
+<project>
+  <name>RDRQ</name>
+  <settings>
+    <defaultWidth>384</defaultWidth>
+    <defaultHeight>320</defaultHeight>
+  </settings>
+  <tilesets>
+    <tileset name="floor" image="floortiles.png" tileWidth="32" tileHeight="32" />
+    <tileset name="toplayer" image="toplayer.png" tileWidth="32" tileHeight="32" />
+  </tilesets>
+  <objects>
+    <object name="intro" image="dialoguebox.png" width="384" height="96" limit="1">
+      <values>
+	<string name="index" default="false" />
+      </values>
+    </object>
+  </objects>
+  <layers>
+    <tiles name="floor" gridSize="32" />
+    <tiles name="mid" gridSize="32" />
+    <tiles name="top" gridSize="32" />
+    <objects name="objects" gridSize="32" />
+  </layers>
+</project>
