@@ -22,16 +22,6 @@ if __name__ == '__main__':
     with open('/home/bitdiddle/crossdomain.xml') as f:
         policy_file = f.read()
 
-    host = 'localhost'
-    port = 0
-    packet_size = 1024
-    backlog = 5
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.bind((host, port))
-    # Find out what our assigned port actually is
-    port = s.getsockname()[1]
-    s.listen(backlog)
-
     # Now prepare to launch our swf verifier
     swffile = sys.argv[1]
     posting = os.getenv('POSTING')
@@ -65,6 +55,7 @@ if __name__ == '__main__':
         
     except:
         print 'failed document parse'
+        print posting
         exit(0)
 
     if username == '' or log == '' or len(claimed_scores) == 0:
@@ -74,7 +65,34 @@ if __name__ == '__main__':
         print 'claimed_scores: ' + str(claimed_scores)
         exit(0)
 
+
     print posting
+
+    # Look at the last frame in the log to figure out what the timeout is 
+    timeout = None
+    log_lines = log.split('\n')[1:]
+    if len(log_lines) > 0:
+        last_line = log_lines[-1].split('k')[0]
+        try:
+            last_frame = int(last_line)
+            timeout = 10.0 + (last_frame*2)/60.0
+        except:
+            pass
+    
+    
+    print 'timeout for local score server: ' + str(timeout)
+    host = 'localhost'
+    port = 0
+    packet_size = 1024
+    backlog = 5
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.bind((host, port))
+    s.settimeout(timeout)
+    # Find out what our assigned port actually is
+    port = s.getsockname()[1]
+    s.listen(backlog)
+
+    
 
     swfarg = '%s?%s\\&%s\\&%s' % (swffile, 'verifying=true', 'localScorePort=' + str(port), 'replayLog=' + urllib.quote(log))
     if state_name != '':
@@ -92,44 +110,46 @@ if __name__ == '__main__':
     else:
         print 'now listening for scores'
         # Now we listen for official score verifications
-        listening = True
-        while listening:
-            client, address = s.accept()
-            connected = True
-            while connected:
-                data = client.recv(packet_size)
-                print 'some data: ' + data
-                if not data:
-                    connected = False
-                    client.close()
-                    continue
-                if data.strip().startswith('<policy-file-request/>'):
-                    print 'policy file requested'
-                    client.send(policy_file+'\0')
-                elif data.strip().startswith('<Hello/>'):
-                    print 'Client Said Hello!'
-                    connected = False
-                    client.close()
-                elif data.strip().startswith('<ReplayEnd/>'):
-                    listening = False
-                    connected = False
-                    client.close()
-                elif data.strip().startswith('<ScoreVerification>'):
-                    print 'parsing verification'
-                    try:
-                        document = parseString(data)
-                        score_tags = document.getElementsByTagName('Score')
-                        for score_tag in score_tags:
-                            score_name = score_tag.getAttribute('name')
-                            claimed_value = score_tag.getAttribute('value')
-                            if claimed_scores.has_key(score_name) and claimed_scores[score_name].value == claimed_value:
-                                claimed_scores[score_name].verified = True
-                    except:
-                        pass
-                    connected = False
-                    client.close()
-
-        
+        # Kill the system if we hit a timeout
+        try:
+            listening = True
+            while listening:
+                client, address = s.accept()
+                connected = True
+                while connected:
+                    data = client.recv(packet_size)
+                    print 'some data: ' + data
+                    if not data:
+                        connected = False
+                        client.close()
+                        continue
+                    if data.strip().startswith('<policy-file-request/>'):
+                        print 'policy file requested'
+                        client.send(policy_file+'\0')
+                    elif data.strip().startswith('<Hello/>'):
+                        print 'Client Said Hello!'
+                        connected = False
+                        client.close()
+                    elif data.strip().startswith('<ReplayEnd/>'):
+                        listening = False
+                        connected = False
+                        client.close()
+                    elif data.strip().startswith('<ScoreVerification>'):
+                        print 'parsing verification'
+                        try:
+                            document = parseString(data)
+                            score_tags = document.getElementsByTagName('Score')
+                            for score_tag in score_tags:
+                                score_name = score_tag.getAttribute('name')
+                                claimed_value = score_tag.getAttribute('value')
+                                if claimed_scores.has_key(score_name) and claimed_scores[score_name].value == claimed_value:
+                                    claimed_scores[score_name].verified = True
+                        except:
+                            pass
+                        connected = False
+                        client.close()
+        except:
+            pass
         os.kill(pid, signal.SIGKILL)
         
         fully_verified = True
