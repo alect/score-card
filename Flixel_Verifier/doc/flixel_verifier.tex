@@ -3,6 +3,7 @@
 \begin {document} 
 
 \title { Preventing Score Forgery with Input Verification } 
+\author{ Alec Thomson \and Alan Huang \and Chris Bille \and Casey McNamara}
 \date {}
 
 \maketitle 
@@ -101,11 +102,18 @@ A possibility with the current design is that an attacker could choose to play a
 
 \section { Related Work } 
 
+With \emph{TrInc}, Levin et al. explored using trusted hardware to prevent cheating in peer-to-peer competitive games \cite{trinc}. While TrInc could possibly be applied to prevent score forgery in certain situations, it would be very difficult to adapt to existing games and leader-board services because of the trusted hardware requirement and the difficulty in designing attestations adapted for individual games. 
+
+Bursztein et al. \cite{bursztein}  looked at other forms of cheating in multiplayer competitive games and built a system that hides information from untrusted clients. For our project, we chose to focus on single-player browser and mobile games where there is a single client performing game computations, so the work is not directly applicable. 
+
+Finally, the work done by Haeberlen et al. using accountable virtual machines and tamper evident logs to present evidence of cheating software\cite{haeberlen} was one of the primary inspirations for this project. We adapted the idea of a trusted version of the game's code from the idea of an accountable virtual machine and chose to trust any client that can produce a legitimate log, avoiding the need for tamper-evident logs. Since AVMs were primarily designed to detect when cheating software has been installed, they can be used to provide further security against cheating in conjunction with our system. 
 
 \section { Conclusions } 
 \label{sec:conclusions}
 
 We explored the problem of score forgery among single-player video games that communicate with leader-board services. We found that existing leader-board services provide little to no protection from forgeries and that it is difficult to adapt existing security measures (cryptography, trusted hardware) to prevent forgeries. As a solution to the problem, we implemented an engine-level system that records player inputs and uses a trusted version of the game's code to verify that those inputs produce the claimed scores. This system appears to perform well and is easy to adapt to existing games. For most games, it provides a high level of security against forgeries while for some games (turn-based puzzle games), it provides perfect security against forgeries. We believe this system can already be applied to existing games and hope it is useful in practice. 
 
+\bibliographystyle{plain}
+\bibliography{references}
 
 \end {document} 
