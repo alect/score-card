@@ -45,6 +45,10 @@ package
 		protected static var _recordStateParamName:String;
 		protected static var _recordStateParamValue:String;
 		
+		
+		// For pooling multiple scores into a single log 
+		protected static var _pooledScores:Array = [];
+		
 		public static function init(startRecording:Boolean=true):void
 		{
 			
@@ -91,12 +95,16 @@ package
 				_recordStateParamValue = paramValue;
 				startRecordingScore(false);
 			}
+			else if (_recording) {
+				FlxG.state[_recordStateParamName] = _recordStateParamValue;
+			}
 			
 		}
 		
 		protected static function startRecordingScore(standardMode:Boolean=true):void
 		{
 			if (!_recording && !_verifying) {
+				_pooledScores = [];
 				FlxG.recordReplay(standardMode);
 				_recording = true;
 			}
@@ -105,39 +113,54 @@ package
 		protected static function verifyScore(scoreLog:String, replayState:FlxState):void
 		{
 			if (!_recording && !_verifying) {
+				_pooledScores = [];
 				FlxG.loadReplay(scoreLog, replayState, null, 0, replayDone);
 				_verifying = true;
 			}
 		}
 		
-		public static function postScore(scoreName:String, scoreValue:uint):void
+		/**
+		 * Add a score to our batch of scores for this recording or verification
+		 * Actually posted or verified when the flushScore function is called. 
+		 */
+		public static function appendScore(scoreName:String, scoreValue:uint):void
 		{
-			// TODO: Implement the post score function 
-			
+			if (_recording || _verifying)
+				_pooledScores.push("<Score name=\"" + scoreName + "\" value=\"" + scoreValue.toString() + "\"/>\n");
+		}
+		
+		public static function flushScores():void
+		{
 			// This function serves two purposes. When running the score recorder, it 
 			// will take a snapshot of the current recording and send that log along with the 
-			// claimed score to the score server. 
+			// pooled scores to the score server. 
 			
-			// When verifying a score on the server, it will officially post the score, marking it 
+			// When verifying a score on the server, it will officially post the scores, marking them
 			// as verified. 
-			
 			if (_recording) { 
 				
 				var recordedLog:String = FlxG.stopRecording(FRAME_BUFFER_SIZE); 
 				
 				Security.allowDomain(SCORE_SERVER_HOST + ":" + SCORE_SERVER_PORT.toString());
 				var socket:Socket = new Socket();
-				socket.addEventListener(Event.CONNECT, postRecordingFn(scoreName, scoreValue, recordedLog)); 
+				socket.addEventListener(Event.CONNECT, postRecordingFn(recordedLog)); 
 				socket.connect(SCORE_SERVER_HOST, SCORE_SERVER_PORT);
 				
 				_recording = false;
 			}
-			else if (_verifying) { 
+			else if (_verifying) {
 				var verifySocket:Socket = new Socket();
-				verifySocket.addEventListener(Event.CONNECT, postVerificationFn(scoreName, scoreValue)); 
+				verifySocket.addEventListener(Event.CONNECT, postVerificationFn()); 
 				verifySocket.connect("localhost", _localScorePort);
 			}
-				
+		}
+		
+		
+		public static function postScore(scoreName:String, scoreValue:uint):void
+		{	
+			// Post a single score immediately 
+			appendScore(scoreName, scoreValue);
+			flushScores();
 		}
 		
 		protected static function replayDone():void	
@@ -147,7 +170,7 @@ package
 			socket.connect("localhost", _localScorePort);
 		}
 		
-		protected static function postRecordingFn(scoreName:String, scoreValue:uint, recordedLog:String):Function
+		protected static function postRecordingFn(recordedLog:String):Function
 		{
 			return function(event:Event):void { 
 				var message:String = "<ScorePosting>\n"
@@ -159,8 +182,10 @@ package
 						message += " paramName=\"" + _recordStateParamName + "\" paramValue=\"" + _recordStateParamValue + "\"";
 					message += "/>\n";
 				}
-				message += "<Score name=\"" + scoreName + "\" value=\"" + scoreValue.toString() + "\"/>\n"
-					+ "<Log>\n" 
+				for each (var claimedScore:String in _pooledScores) {
+					message += claimedScore;
+				}
+				message += "<Log>\n" 
 					+ recordedLog
 					+ "</Log>\n"
 					+ "</ScorePosting>";
@@ -171,12 +196,14 @@ package
 			};
 		}
 		
-		protected static function postVerificationFn(scoreName:String, scoreValue:uint):Function
+		protected static function postVerificationFn():Function
 		{
 			return function(event:Event):void {
-				var message:String = "<ScoreVerification>\n"
-					+ "<Score name=\"" + scoreName +"\" value=\"" + scoreValue.toString() + "\"/>\n"
-					+ "</ScoreVerification>";
+				var message:String = "<ScoreVerification>\n";
+				for each (var verifiedScore:String in _pooledScores) { 
+					message += verifiedScore;
+				}
+				message += "</ScoreVerification>";
 				var socket:Socket = event.target as Socket;
 				socket.writeUTFBytes(message);
 				socket.flush();

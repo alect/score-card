@@ -499,7 +499,11 @@ package gamestates
 			FlxG.music.pause();
 			// Send the win stats to Kongregate
 			//FlxKongregate.submitStats("LevelCompleted-" + _currentLevelIndex.toString(), _roundsUsed);
-			FlxScoreVerifier.postScore("LevelCompleted-" + _currentLevelIndex.toString(), _roundsUsed);
+			//FlxScoreVerifier.postScore("LevelCompleted-" + _currentLevelIndex.toString(), _roundsUsed);
+			FlxScoreVerifier.appendScore("LevelCompleted-" + _currentLevelIndex.toString(), _roundsUsed);
+			FlxScoreVerifier.appendScore("LevelScore-" + _currentLevelIndex.toString(), _roundsUsed);
+			FlxScoreVerifier.flushScores();
+			
 			
 			// Should play a victory sound and reveal the win text along with some stats
 			_winSound.play(true);
