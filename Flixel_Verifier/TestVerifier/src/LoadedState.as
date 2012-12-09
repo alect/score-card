@@ -7,13 +7,14 @@ package
 	import org.flixel.FlxG;
 	import org.flixel.FlxState;
 	import org.flixel.FlxText;
+	import flash.system.Security;
 	
 	public class LoadedState extends FlxState
 	{
 		
 		private var status:FlxText;
 		private var won:Boolean;
-		
+		private var testSocket:Socket;
 		
 		public override function create():void
 		{
@@ -23,7 +24,7 @@ package
 			status.alignment = "center";
 			add(status);
 			won = false;
-			
+
 		}
 		
 		public override function update():void
@@ -35,6 +36,6 @@ package
 			}
 			super.update();
 		}
-		
+
 	}
 }
