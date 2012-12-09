@@ -31,6 +31,8 @@ if __name__ == '__main__':
                 if data.strip().startswith('<policy-file-request/>'):
                     client.send(policy_file+'\0')
                     print 'sending policy file'
+                    connected = False
+                    client.close()
                 elif data.strip().startswith('<ScorePosting>'):
                     # If we have a score posting, receive the whole thing
                     posting = ''

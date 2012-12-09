@@ -75,7 +75,7 @@ if __name__ == '__main__':
         last_line = log_lines[-1].split('k')[0]
         try:
             last_frame = int(last_line)
-            timeout = 10.0 + (last_frame*2)/60.0
+            timeout = 22.0 + (last_frame*4)/30.0
         except:
             pass
     
@@ -149,6 +149,7 @@ if __name__ == '__main__':
                         connected = False
                         client.close()
         except:
+            print 'Verification timed out!'
             pass
         os.kill(pid, signal.SIGKILL)
         

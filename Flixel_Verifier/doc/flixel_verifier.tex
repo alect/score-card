@@ -54,7 +54,7 @@ Our Flixel specific verifier works by spawning a new Flash Player instance (in o
 Meanwhile, the local server will listen for score verification until either all the claimed scores are verified, the game sends a ``ReplayEnd'' message, or the game exceeds a certain amount of time during verification. Afterwards, the local server will either accept or reject the claimed scores and kill the spawned process. To calculate the timeout for a given score, our verifier uses the frame number of the last frame in the log as a basis for roughly how long the verification should take. The function then becomes: 
 
 \begin{verbatim}
-timeout = 10 + last_frame*2/fps
+timeout = 20 + last_frame*4/fps
 \end{verbatim}
 
 This function is to ensure that the verifier is given enough time to run while allowing for overhead in starting the process and possible delays during a heavy server load. 
