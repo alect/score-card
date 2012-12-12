@@ -1,0 +1,5 @@
+{ 
+    'TestVerifier' : { 'game_dir' : 'game_handlers/TestVerifier' },
+    'RDRQ' : { 'game_dir' : 'game_handlers/RDRQ' },
+    'TestSlickVerifier' : { 'game_dir' : 'game_handlers/SlickVerifier' }
+} 
